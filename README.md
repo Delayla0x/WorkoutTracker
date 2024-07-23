@@ -1,1 +1,1 @@
-# WorkoutTracker
+WorkoutTracker is a backend application designed to help users track their fitness routines effectively. Utilizing the Gin framework for optimized HTTP requests and GORM for ORM capabilities, it offers an efficient way to manage workout data. The application features a robust setup including configured routes for seamless user interactions and a server that listens on a designated port for reliable access. Get ready to elevate your fitness journey with WorkoutTracker, your go-to solution for all your workout tracking needs.
