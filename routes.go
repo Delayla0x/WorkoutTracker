@@ -7,31 +7,32 @@ import (
 	"yourapp/controllers"
 )
 
-func setupRouter() *gin.Engine {
-	r := gin.Default()
+func initializeRouter() *gin.Engine {
+	router := gin.Default()
 
-	workoutRoutes := r.Group("/workouts")
+	workoutGroup := router.Group("/workouts")
 	{
-		workoutRoutes.GET("/", controllers.GetWorkouts)
-		workoutRoutes.GET("/:id", controllers.GetWorkoutByID)
-		workoutRoutes.POST("/", controllers.CreateWorkout)
-		workoutRoutes.PUT("/:id", controllers.UpdateWorkout)
-		workoutRoutes.DELETE("/:id", controllers.DeleteWorkout)
+		workoutGroup.GET("/", controllers.FetchAllWorkouts)
+		workoutGroup.GET("/:id", controllers.FetchWorkoutByID)
+		workoutGroup.POST("/", controllers.AddNewWorkout)
+		workoutGroup.PUT("/:id", controllers.ModifyWorkout)
+		workoutGroup.DELETE("/:id", controllers.RemoveWorkout)
 	}
 
-	return r
+	return router
 }
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		panic("Error loading .env file")
+		panic("Failed to load .env file")
 	}
 
-	r := setupRouter()
+	router := initializeRouter()
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	serverPort := os.Getenv("PORT")
+	if serverPort == "" {
+		serverPort = "8080"
 	}
-	r.Run(":" + port)
+
+	router.Run(":" + serverPort)
 }
