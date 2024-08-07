@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres" 
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/subosito/gotenv"
 )
 
@@ -24,6 +26,15 @@ type Workout struct {
 var db *gorm.DB
 var err error
 
+// Simple in-memory cache implementation
+var workoutCache = struct {
+	sync.RWMutex
+	workouts []Workout
+	lastUpdate time.Time
+}{}
+
+const cacheDuration = 5 * time.Minute // How long to cache workouts before refreshing from DB
+
 func initDB() {
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
@@ -32,7 +43,7 @@ func initDB() {
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbSSLMode := os.Getenv("DB_SSLMODE")
 
-	dbUri := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s password=%s", dbHost, dbPort, dbUser, dbName, dbSSLMode, dbPassword) 
+	dbUri := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s password=%s", dbHost, dbPort, dbUser, dbName, dbSSLMode, dbPassword)
 	fmt.Println(dbUri)
 	db, err = gorm.Open("postgres", dbUri)
 	if err != nil {
@@ -46,14 +57,35 @@ func createWorkout(c *gin.Context) {
 	c.BindJSON(&workout)
 
 	db.Create(&workout)
+
+	// Invalidate cache
+	workoutCache.Lock()
+	workoutCache.lastUpdate = time.Time{}
+	workoutCache.Unlock()
+
 	c.JSON(http.StatusOK, workout)
 }
 
 func getWorkouts(c *gin.Context) {
+	workoutCache.RLock()
+	cacheExpired := time.Since(workoutCache.lastUpdate) > cacheDuration
+	if !cacheExpired && workoutCache.workouts != nil {
+		c.JSON(http.StatusOK, workoutCache.workouts)
+		workoutCache.RUnlock()
+		return
+	}
+	workoutCache.RUnlock()
+
+	// If cache expired or not initialized, fetch from DB and update cache
 	var workouts []Workout
 	if err := db.Find(&workouts).Error; err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 	} else {
+		workoutCache.Lock()
+		workoutCache.workouts = workouts
+		workoutCache.lastUpdate = time.Now()
+		workoutCache.Unlock()
+
 		c.JSON(http.StatusOK, workouts)
 	}
 }
@@ -74,12 +106,24 @@ func updateWorkout(c *gin.Context) {
 	db.Where("id = ?", id).First(&workout)
 	c.BindJSON(&workout)
 	db.Save(&workout)
+
+	// Invalidate cache
+	workoutCache.Lock()
+	workoutCache.lastUpdate = time.Time{}
+	workoutCache.Unlock()
+
 	c.JSON(http.StatusOK, workout)
 }
 
 func deleteWorkout(c *gin.Context) {
 	id := c.Params.ByName("id")
 	db.Where("id = ?", id).Delete(&Workout{})
+
+	// Invalidate cache
+	workoutCache.Lock()
+	workoutCache.lastUpdate = time.Time{}
+	workoutCache.Unlock()
+
 	c.JSON(http.StatusOK, gin.H{"id #" + id: "deleted"})
 }
 
@@ -95,7 +139,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" 
+		port = "8080"
 	}
 	r.Run(":" + port)
 }
