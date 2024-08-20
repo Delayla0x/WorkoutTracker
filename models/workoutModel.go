@@ -10,15 +10,20 @@ import (
 )
 
 type Exercise struct {
-	gorm.Model
-	Name   string
-	Sets   int
-	Reps   int
-	Weight float64
+	ID        uint `gorm:"primaryKey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	WorkoutID uint
+	Name      string
+	Sets      int
+	Reps      int
+	Weight    float64
 }
 
 type Workout struct {
-	gorm.Model
+	ID        uint `gorm:"primaryKey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 	Name      string
 	Date      time.Time
 	Duration  int
@@ -38,4 +43,29 @@ func main() {
 	if err != nil {
 		panic("failed to migrate database")
 	}
+
+	exercises := []Exercise{
+		{Name: "Push Ups", Sets: 3, Reps: 15, Weight: 0},
+		{Name: "Pull Ups", Sets: 3, Reps: 10, Weight: 0},
+	}
+	if err := CreateWorkout(db, "Morning Routine", 30, exercises); err != nil {
+		fmt.Printf("Failed to create workout: %v\n", err)
+		return
+	}
+	fmt.Println("Workout created successfully")
+}
+
+func CreateWorkout(db *gorm.DB, workoutName string, duration int, exercises []Exercise) error {
+	workout := Workout{
+		Name:      workoutName,
+		Date:      time.Now(),
+		Duration:  duration,
+		Exercises: exercises,
+	}
+
+	if err := db.Create(&workout).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
