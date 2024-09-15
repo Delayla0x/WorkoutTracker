@@ -1,35 +1,35 @@
 package main
 
 import (
-	"fmt"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"os"
+    "fmt"
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
+    "os"
 )
 
-var DB *gorm.DB
+var database *gorm.DB
 
-func InitDatabase() {
-	dbName := os.Getenv("DATABASE_NAME")
-	if dbName == "" {
-		dbName = "test.db"
-	}
+func InitializeDatabaseConnection() {
+    databaseName := os.Getenv("DATABASE_NAME")
+    if databaseName == "" {
+        databaseName = "test.db"
+    }
 
-	var err error
-	DB, err = gorm.Open(sqlite.Open(dbName), &gorm.Config{})
-	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to database: %v", err))
-	}
+    var err error
+    database, err = gorm.Open(sqlite.Open(databaseName), &gorm.Config{})
+    if err != nil {
+        panic(fmt.Sprintf("Failed to connect to database: %v", err))
+    }
 
-	fmt.Println("Database connection successfully established.")
+    fmt.Println("Database connection successfully established.")
 }
 
-func GetDB() *gorm.DB {
-	return DB
+func GetDatabase() *gorm.DB {
+    return database
 }
 
 func main() {
-	InitDatabase()
+    InitializeDatabaseConnection()
 
-	db := GetDB()
+    dbConnection := GetDatabase()
 }
