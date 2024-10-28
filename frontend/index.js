@@ -1,12 +1,25 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './App';
+const MyComponent = React.memo(function MyComponent(props) {
+  /* render using props */
+});
 
-const API_URL = process.env.REACT_APP_API_URL;
+import React, { useCallback } from 'react';
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App apiUrl={API_URL} />
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+const MyComponent = React.memo(({ onClick }) => {
+  /* Use onClick without redeclaring it on every render */
+});
+
+function ParentComponent(props) {
+  const handleClick = useCallback(() => {
+    /* handle click event */
+  }, []); // dependencies array
+
+  return <MyComponent onClick={handleClick} />;
+}
+
+useEffect(() => {
+ const timer = setTimeout(() => {
+   // Do something
+ }, 1000);
+
+ return () => clearTimeout(timer); // Cleanup
+}, []);
