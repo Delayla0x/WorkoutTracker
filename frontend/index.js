@@ -1,25 +1,21 @@
-const MyComponent = React.memo(function MyComponent(props) {
-  /* render using props */
+import React, { useCallback, useEffect } from 'react';
+
+const WorkoutTrackerComponent = React.memo(({ onWorkoutClick }) => {
+  
 });
 
-import React, { useCallback } from 'react';
-
-const MyComponent = React.memo(({ onClick }) => {
-  /* Use onClick without redeclaring it on every render */
-});
-
-function ParentComponent(props) {
-  const handleClick = useCallback(() => {
-    /* handle click event */
-  }, []); // dependencies array
-
-  return <MyComponent onClick={handleClick} />;
+function WorkoutTrackerParent(props) {
+  const handleWorkoutClick = useCallback(() => {
+    
+  }, []);
+  
+  return <WorkoutTrackerComponent onWorkoutClick={handleWorkworkoutClick} />;
 }
 
 useEffect(() => {
- const timer = setTimeout(() => {
-   // Do something
+ const workoutTimer = setTimeout(() => {
+   
  }, 1000);
-
- return () => clearTimeout(timer); // Cleanup
+ 
+ return () => clearTimeout(workoutTimer);
 }, []);
