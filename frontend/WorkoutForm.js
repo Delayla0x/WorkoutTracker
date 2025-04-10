@@ -8,6 +8,9 @@ const WorkoutForm = () => {
     intensity: '',
   });
 
+  // State to hold error messages
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -17,7 +20,9 @@ const WorkoutForm = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
+
+    setErrorMessage(''); // Reset error message on new submission attempt
 
     try {
       const endpoint = process.env.REACT_APP_API_URL + '/workouts';
@@ -31,7 +36,24 @@ const WorkoutForm = () => {
 
       console.log('Workout created successfully', response.data);
     } catch (error) {
-      console.error('Error creating workout:', error.response.data);
+      console.error('Error creating workout:', error.response ? error.response.data : error);
+
+      // More robust error handling to account for various error scenarios
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        if (error.response.data && typeof error.response.data === 'object') {
+          setErrorMessage('Error: ' + (error.response.data.message || JSON.stringify(error.response.data)));
+        } else {
+          setErrorMessage('Error: ' + error.response.statusText);
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        setErrorMessage('Error: The server did not respond.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        setErrorMessage('Error: ' + error.message);
+      }
     }
   };
 
@@ -71,6 +93,7 @@ const WorkoutForm = () => {
           <option value="high">High</option>
         </select>
       </div>
+      {errorMessage && <div style={{ color: 'red', marginTop: '10px' }}>{errorMessage}</div>}
       <button type="submit">Add Workout</button>
     </form>
   );
